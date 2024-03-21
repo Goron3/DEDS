@@ -8,11 +8,8 @@ now = datetime.now()
 sqlite_connectie = sqlite3.connect('DWH')
 export_conn = pyodbc.connect('DRIVER={SQL Server};SERVER=' + DB['servername'] + ';DATABASE=' + DB['database'] + ';Trusted_Connection=yes')
 export_cursor = export_conn.cursor()
-export_cursor
-
 
 current_time= now.strftime("%d/%m/%Y %H:%M:%S")
-current_time
 
 staff_id = 12
 satisfaction_data = {
@@ -62,6 +59,7 @@ dbobject2 = pd.DataFrame(sales_data)
 for index, row in dbobject2.iterrows():
     query_sales = f"INSERT INTO SALES VALUES ({row['SALES_SK']},'{row['SALES_STAFF_id']}', '{row['SALES_FIRST_name']}', '{row['SALES_LAST_name']}', '{row['SALES_EXTENSION_number']}', '{row['SALES_EMAIL_name']}', '{row['SALES_MANAGER_id']}', '{row['SALES_BRANCH_id']}', '{row['SALES_ADDRESS1_name']}', '{row['SALES_ADDRESS2_name']}', '{row['SALES_POSITION_name']}', '{row['SALES_WORK_PHONE_number']}', '{row['SALES_FAX_number']}', '{row['SALES_HIRED_date']}', '{row['SALES_COUNTRY_id']}', '{row['SALES_REGION_name']}', '{row['SALES_CITY_name']}', '{row['SALES_POSTAL_ZONE_name']}', '{row['SALES_FSK']}', '{row['Changedate']}')"
 export_cursor.execute(query_sales)
+
 export_conn.commit()
 export_conn.close()
 
