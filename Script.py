@@ -1,36 +1,17 @@
 import pandas as pd
-import pyodbc
-import sqlite3
+from settings import settings
 from datetime import datetime
+import pyodbc
+
 def Script():
-    DB = {'servername': r'DESKTOP-I3QFF0F\SQLEXPRESS', 'database': 'DWH'}
     now = datetime.now()
-    sqlite_connectie = sqlite3.connect('DWH')
+    current_time= now.strftime("%d/%m/%Y %H:%M:%S")
+    
+    DB = {'servername': r'DESKTOP-I3QFF0F\SQLEXPRESS', 'database': 'DWH'}
     export_conn = pyodbc.connect('DRIVER={SQL Server};SERVER=' + DB['servername'] + ';DATABASE=' + DB['database'] + ';Trusted_Connection=yes')
     export_cursor = export_conn.cursor()
 
-    current_time= now.strftime("%d/%m/%Y %H:%M:%S")
-
-    staff_id = 12
-    satisfaction_data = {
-        'SATISFACTION_SK' : [(pd.read_sql_query('SELECT MAX(SATISFACTION_SK) FROM SATISFACTION', export_conn) + 1).iloc[0, 0]],
-        'SATISFACTION_YEAR_number': [2010],
-        'SATISFACTION_STAFF_id': [staff_id],
-        'SATISFACTION_TYPE_id': [1],
-        'SATISFACTION_TYPE_description': ["goed"],
-        'SALES_FSK': [(pd.read_sql_query("select MAX(SALES_SK) from SALES where SALES_STAFF_id = " + str(staff_id), export_conn)).iloc[0, 0]],
-        'Changedate': [current_time]
-    }
-
-    dbobject = pd.DataFrame(satisfaction_data)
-
-    for index, row in dbobject.iterrows():
-        query_satisfaction = f"INSERT INTO SATISFACTION VALUES ({row['SATISFACTION_SK']}, {row['SATISFACTION_YEAR_number']},'{row['SATISFACTION_STAFF_id']}', '{row['SATISFACTION_TYPE_id']}', '{row['SATISFACTION_TYPE_description']}', '{row['SALES_FSK']}', '{row['Changedate']}')"
-    export_cursor.execute(query_satisfaction)
-
-    export_conn.commit()
-
-    sales_staff_id = 12
+    sales_staff_id = 2
     sales_data = { 
         'SALES_SK':[changeSK([("tabel1", "SALES"),("tabel2", "SATISFACTION")], "SALES", sales_staff_id)],
         'SALES_STAFF_id':[sales_staff_id],
@@ -50,7 +31,7 @@ def Script():
         'SALES_REGION_name' : ["W"],
         'SALES_CITY_name' : ["Utrecht"],
         'SALES_POSTAL_ZONE_name' : ["2325KL"],
-        'SALES_FSK' : [(pd.read_sql_query("select MAX(SALES_SK) from SALES where SALES_STAFF_id = " + str(13), export_conn)).iloc[0, 0]],
+        'SALES_FSK' : [(pd.read_sql_query("select MAX(SALES_SK) from SALES where SALES_STAFF_id = " + str(1), export_conn)).iloc[0, 0]],
         'Changedate': [current_time]
     }
 
@@ -61,13 +42,32 @@ def Script():
     export_cursor.execute(query_sales)
 
     export_conn.commit()
-    export_conn.close()
 
+    staff_id = 1
+    satisfaction_data = {
+        'SATISFACTION_SK' : [(pd.read_sql_query('SELECT MAX(SATISFACTION_SK) FROM SATISFACTION', export_conn) + 1).iloc[0, 0]],
+        'SATISFACTION_YEAR_number': [2010],
+        'SATISFACTION_STAFF_id': [staff_id],
+        'SATISFACTION_TYPE_id': [1],
+        'SATISFACTION_TYPE_description': ["goed"],
+        'SALES_FSK': [ (pd.read_sql_query("select MAX(SALES_SK) from SALES where SALES_STAFF_id = " + str(staff_id), export_conn)).iloc[0, 0]],
+        'Changedate': [current_time]
+    }
+
+    dbobject = pd.DataFrame(satisfaction_data)
+
+    for index, row in dbobject.iterrows():
+        query_satisfaction = f"INSERT INTO SATISFACTION VALUES ({row['SATISFACTION_SK']}, {row['SATISFACTION_YEAR_number']},'{row['SATISFACTION_STAFF_id']}', '{row['SATISFACTION_TYPE_id']}', '{row['SATISFACTION_TYPE_description']}', '{row['SALES_FSK']}', '{row['Changedate']}')"
+    export_cursor.execute(query_satisfaction)
+
+    export_conn.commit()
 
 def changeSK(tables, table, id):
+    DB = {'servername': r'DESKTOP-I3QFF0F\SQLEXPRESS', 'database': 'DWH'}
+    export_conn = pyodbc.connect('DRIVER={SQL Server};SERVER=' + DB['servername'] + ';DATABASE=' + DB['database'] + ';Trusted_Connection=yes')
+    export_cursor = export_conn.cursor()
     SK = (pd.read_sql_query(f'SELECT MAX({table}_SK) FROM {table}', export_conn) + 1).iloc[0, 0]
     for tbl, tbl_name in tables:
         query_change = f"UPDATE {tbl_name} SET {table}_FSK = {SK} WHERE {tbl_name}_STAFF_id = {id}"
         export_cursor.execute(query_change)
     return SK
-
